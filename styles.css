@@ -1,0 +1,299 @@
+/* Full-width PR pages (Conversation and Commits tabs) */
+html[data-fgu-pr] #diff-comparison-viewer-container,
+html[data-fgu-pr] #diff-comparison-viewer-container [class*='prc-PageLayout-ContentWrapper'],
+html[data-fgu-pr] #diff-comparison-viewer-container [class*='prc-PageLayout-Content-'] {
+  max-width: none !important;
+}
+
+/* Resizable file tree on the Files changed tab */
+html[data-fgu-sidebar] #diff-layout-component {
+  --Layout-sidebar-width: var(--fgu-sidebar-width) !important;
+}
+
+#diff-layout-component {
+  position: relative;
+}
+
+.fgu-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--Layout-sidebar-width);
+  width: var(--Layout-gutter);
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.fgu-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.fgu-resize-handle:hover::after,
+html.fgu-resizing .fgu-resize-handle::after {
+  background: var(--borderColor-accent-emphasis, #0969da);
+}
+
+html.fgu-resizing,
+html.fgu-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.hx_Layout--sidebar-hidden > .fgu-resize-handle {
+  display: none;
+}
+
+/* Below md the sidebar stacks above the diff */
+@media (width <= 767.98px) {
+  .fgu-resize-handle {
+    display: none;
+  }
+}
+
+/* Full file paths in diff headers; the start of the path is cut only when space runs out */
+.file-header .file-info:has(> .Truncate > a.fgu-path) {
+  display: flex;
+  align-items: center;
+  column-gap: 7px;
+}
+
+a.fgu-path {
+  direction: rtl;
+  text-align: left;
+}
+
+/* New Files changed experience: the path and the actions split the header 50/50 by default */
+[class*='DiffFileHeader-module__diff-file-header'] > [class*='DiffFileHeader-module__file-path-section'] {
+  flex: 0 1 auto !important;
+}
+
+[class*='DiffFileHeader-module__diff-file-header'] > [class*='DiffFileHeader-module__file-path-section'] + * {
+  flex: 1 0 auto !important;
+}
+
+/* Graphite stack sidebar */
+html[data-fgu-stack] {
+  --fgu-stack-width: 280px;
+}
+
+html[data-fgu-stack][data-fgu-stack-collapsed] {
+  --fgu-stack-width: 44px;
+}
+
+html[data-fgu-stack] body {
+  margin-left: var(--fgu-stack-width) !important;
+}
+
+.fgu-stack {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 29;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: var(--fgu-stack-width);
+  overflow-y: auto;
+  background: var(--bgColor-inset, var(--bgColor-default, #f6f8fa));
+  border-right: 1px solid var(--borderColor-default, #d1d9e0);
+  color: var(--fgColor-default, #1f2328);
+  font: 14px/1.4 var(--fontStack-sansSerif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+}
+
+.fgu-stack svg {
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.fgu-stack-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--borderColor-muted, #d1d9e0b3);
+  color: var(--fgColor-muted, #59636e);
+}
+
+.fgu-stack-heading {
+  font-weight: 600;
+  color: var(--fgColor-default, #1f2328);
+}
+
+.fgu-stack-count {
+  padding: 0 6px;
+  border-radius: 2em;
+  background: var(--bgColor-neutral-muted, #818b981f);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.fgu-stack-toggle {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.fgu-stack-toggle:hover {
+  background: var(--bgColor-neutral-muted, #818b981f);
+  color: var(--fgColor-default, #1f2328);
+}
+
+.fgu-stack-list {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+}
+
+.fgu-stack-item {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  padding: 8px 8px 8px 6px;
+  border-radius: 6px;
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.fgu-stack-item:hover {
+  background: var(--bgColor-neutral-muted, #818b981f);
+}
+
+.fgu-stack-item[aria-current='page'] {
+  background: var(--bgColor-accent-muted, #ddf4ff);
+}
+
+.fgu-stack-item[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -8px;
+  width: 4px;
+  border-radius: 6px;
+  background: var(--bgColor-accent-emphasis, #0969da);
+}
+
+.fgu-stack-state {
+  margin-top: 1px;
+}
+
+.fgu-stack-state-open {
+  color: var(--fgColor-open, #1a7f37);
+}
+
+.fgu-stack-state-draft {
+  color: var(--fgColor-muted, #59636e);
+}
+
+.fgu-stack-state-merged {
+  color: var(--fgColor-done, #8250df);
+}
+
+.fgu-stack-state-closed {
+  color: var(--fgColor-closed, #d1242f);
+}
+
+.fgu-stack-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fgu-stack-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.fgu-stack-item[aria-current='page'] .fgu-stack-title {
+  font-weight: 600;
+}
+
+.fgu-stack-number {
+  color: var(--fgColor-muted, #59636e);
+  font-size: 12px;
+}
+
+.fgu-stack-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px 8px;
+  padding: 0 8px 0 6px;
+  color: var(--fgColor-muted, #59636e);
+  font: 12px var(--fontStack-monospace, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.fgu-stack-base-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fgu-stack-error {
+  padding: 12px 14px;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.fgu-stack-error p {
+  margin: 0 0 8px;
+}
+
+.fgu-stack-options {
+  padding: 4px 10px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 6px;
+  background: var(--bgColor-default, #fff);
+  color: var(--fgColor-default, #1f2328);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Collapsed: a strip of state icons */
+html[data-fgu-stack-collapsed] .fgu-stack-header {
+  justify-content: center;
+  padding: 0;
+}
+
+html[data-fgu-stack-collapsed] .fgu-stack-header > :not(.fgu-stack-toggle),
+html[data-fgu-stack-collapsed] .fgu-stack-text,
+html[data-fgu-stack-collapsed] .fgu-stack-base,
+html[data-fgu-stack-collapsed] .fgu-stack-error {
+  display: none;
+}
+
+html[data-fgu-stack-collapsed] .fgu-stack-toggle {
+  margin: 0;
+}
+
+html[data-fgu-stack-collapsed] .fgu-stack-list {
+  padding: 8px 6px;
+}
+
+html[data-fgu-stack-collapsed] .fgu-stack-item {
+  justify-content: center;
+  padding: 8px 0;
+}
+
+html[data-fgu-stack-collapsed] .fgu-stack-item[aria-current='page']::before {
+  left: -6px;
+}

@@ -87,25 +87,31 @@ html[data-fgu-stack][data-fgu-stack-collapsed] {
   --fgu-stack-width: 44px;
 }
 
-html[data-fgu-stack] body {
-  margin-left: var(--fgu-stack-width) !important;
+html[data-fgu-stack] .application-main {
+  position: relative;
+  padding-left: var(--fgu-stack-width) !important;
 }
 
+/* Spans the height of the page content; the panel inside sticks to the top of the viewport */
 .fgu-stack {
-  position: fixed;
-  top: 0;
+  position: absolute;
+  top: calc(-1 * var(--fgu-stack-gap, 0px));
   bottom: 0;
   left: 0;
   z-index: 29;
-  display: flex;
-  flex-direction: column;
   box-sizing: border-box;
   width: var(--fgu-stack-width);
-  overflow-y: auto;
   background: var(--bgColor-inset, var(--bgColor-default, #f6f8fa));
   border-right: 1px solid var(--borderColor-default, #d1d9e0);
   color: var(--fgColor-default, #1f2328);
   font: 14px/1.4 var(--fontStack-sansSerif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+}
+
+.fgu-stack-panel {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .fgu-stack svg {

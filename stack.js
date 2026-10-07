@@ -135,12 +135,41 @@ function renderStackSidebar() {
 
   stackSidebar ??= stackElement('nav', 'fgu-stack');
   stackSidebar.setAttribute('aria-label', 'Pull request stack');
-  stackSidebar.replaceChildren(renderStackHeader(), stackState.stack ? renderStackList() : renderStackError());
-  // Outside <body>, because Turbo replaces <body> on navigation.
-  if (!stackSidebar.isConnected) {
-    stackRoot.append(stackSidebar);
+  const panel = stackElement('div', 'fgu-stack-panel');
+  panel.append(renderStackHeader(), stackState.stack ? renderStackList() : renderStackError());
+  stackSidebar.replaceChildren(panel);
+  mountStackSidebar();
+  alignStackSidebar();
+}
+
+// Inside .application-main so the sidebar starts below the GitHub header. Turbo replaces <body> on
+// navigation, so the sidebar is mounted again when it gets detached.
+function mountStackSidebar() {
+  const container = document.querySelector('.application-main');
+  if (container && stackSidebar.parentElement !== container) {
+    container.prepend(stackSidebar);
+    alignStackSidebar();
   }
 }
+
+// .application-main starts 24px below the header (a collapsed margin), so pull the sidebar up to it.
+function alignStackSidebar() {
+  const container = stackSidebar?.parentElement;
+  if (!container) {
+    return;
+  }
+  let contentAbove = 0;
+  for (let element = container.previousElementSibling; element; element = element.previousElementSibling) {
+    const { position } = getComputedStyle(element);
+    if (position !== 'absolute' && position !== 'fixed') {
+      contentAbove = Math.max(contentAbove, element.getBoundingClientRect().bottom);
+    }
+  }
+  const gap = Math.max(0, container.getBoundingClientRect().top - contentAbove);
+  stackSidebar.style.setProperty('--fgu-stack-gap', `${gap}px`);
+}
+
+window.addEventListener('resize', alignStackSidebar);
 
 function loadStack(current, locationKey) {
   chrome.runtime.sendMessage({ type: 'getStack', ...current }, (response) => {
@@ -168,8 +197,8 @@ function syncStackSidebar() {
   const locationKey = current ? `${current.owner}/${current.repo}#${current.number}/${current.tab}` : null;
 
   if (locationKey === stackState.locationKey) {
-    if (stackSidebar && stackRoot.hasAttribute('data-fgu-stack') && !stackSidebar.isConnected) {
-      stackRoot.append(stackSidebar);
+    if (stackSidebar && stackRoot.hasAttribute('data-fgu-stack')) {
+      mountStackSidebar();
     }
     return;
   }

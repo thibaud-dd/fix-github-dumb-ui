@@ -219,8 +219,15 @@ html[data-fgu-stack] .application-main {
 
 .fgu-stack-text {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
+}
+
+.fgu-stack-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .fgu-stack-title {
@@ -272,6 +279,53 @@ html[data-fgu-stack] .application-main {
   color: var(--fgColor-default, #1f2328);
   font: inherit;
   cursor: pointer;
+}
+
+/* Unresolved review threads: overlapping avatars of the thread starters and the count */
+.fgu-threads {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  color: var(--fgColor-muted, #59636e);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.fgu-threads-avatars {
+  display: inline-flex;
+}
+
+.fgu-threads-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--bgColor-default, #fff);
+  background: var(--bgColor-default, #fff);
+}
+
+.fgu-threads-avatar + .fgu-threads-avatar {
+  margin-left: -6px;
+}
+
+[data-fgu-threads] > :has(> .octicon-comment) {
+  display: none !important;
+}
+
+.fgu-stack-item .fgu-threads {
+  margin-left: auto;
+  line-height: 16px;
+}
+
+.fgu-stack-item .fgu-threads-avatar {
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 0 0 1.5px var(--bgColor-inset, var(--bgColor-default, #f6f8fa));
+}
+
+.fgu-stack-item .fgu-threads-avatar + .fgu-threads-avatar {
+  margin-left: -4px;
 }
 
 /* Collapsed: a strip of state icons */

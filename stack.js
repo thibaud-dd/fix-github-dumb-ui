@@ -96,8 +96,13 @@ function renderStackList() {
       link.setAttribute('aria-current', 'page');
     }
 
+    const meta = stackElement('span', 'fgu-stack-meta');
+    meta.append(stackElement('span', 'fgu-stack-number', `#${pr.number}`));
+    if (pr.threads?.count) {
+      meta.append(renderThreadsBadge(pr.threads));
+    }
     const text = stackElement('span', 'fgu-stack-text');
-    text.append(stackElement('span', 'fgu-stack-title', pr.title), stackElement('span', 'fgu-stack-number', `#${pr.number}`));
+    text.append(stackElement('span', 'fgu-stack-title', pr.title), meta);
     link.append(stackIcon(state, `fgu-stack-state fgu-stack-state-${state}`), text);
 
     const item = document.createElement('li');

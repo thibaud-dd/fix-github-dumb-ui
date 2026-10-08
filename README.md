@@ -7,6 +7,7 @@ A Chrome extension for GitHub pull request pages:
 - Classic Files changed view: diff headers show the full file path. GitHub cuts paths longer than about 93 characters on the server. The start of the path is cut only when there is not enough space.
 - New Files changed view: the file path uses all free space in the diff header. By default, GitHub gives the path only half of the header.
 - Stack sidebar: if a PR is part of a Graphite stack, a sidebar on the left lists the PRs in the stack with their title and state. The current PR is highlighted. A click opens the same tab on the other PR. The arrow button collapses the sidebar to a strip of state icons.
+- Unresolved review threads: in the PR list, the comment bubble is replaced by the avatars of the people who started the unresolved threads and the thread count. If a PR has no unresolved threads, the bubble is hidden. The stack sidebar shows the same avatars next to the PR number. Hover an avatar to see the name.
 
 ## Install
 
@@ -16,9 +17,9 @@ A Chrome extension for GitHub pull request pages:
 
 After you edit a file, click the reload icon on the extension card. Then reload the GitHub tab.
 
-## Stack sidebar setup
+## Token setup
 
-The sidebar reads the Graphite stack comment through the GitHub API, so it needs a token.
+The stack sidebar and the unresolved threads read data through the GitHub API, so they need a token.
 
 1. Get a token. To use your gh CLI token, run `gh auth token --user <login>`.
 2. On the extension card in `chrome://extensions`, click **Details**, then **Extension options**.

@@ -108,6 +108,7 @@ function update() {
   expandTruncatedPaths();
   ensureResizeHandle();
   syncStackSidebar();
+  syncPrListThreads();
 }
 
 new MutationObserver(() => {

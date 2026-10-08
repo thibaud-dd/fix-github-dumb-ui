@@ -19,7 +19,28 @@ const COMMENTS_QUERY = `
   }
 `;
 
+// Only review threads can be resolved. The API has no isResolved filter, so count on the client.
+const THREAD_FIELDS = `
+  reviewThreads(first: 100) {
+    nodes {
+      isResolved
+      comments(first: 1) {
+        nodes {
+          author {
+            login
+            avatarUrl(size: 40)
+            ... on User {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 const stackCache = new Map();
+const threadsCache = new Map();
 
 class AuthError extends Error {}
 
@@ -71,6 +92,21 @@ function parseStackComment(body) {
   return { numbers, base };
 }
 
+// Authors are the thread starters, most threads first.
+function summarizeThreads(pr) {
+  const unresolved = pr.reviewThreads.nodes.filter(({ isResolved }) => !isResolved);
+  const authors = new Map();
+  for (const thread of unresolved) {
+    const author = thread.comments.nodes[0]?.author;
+    if (author) {
+      const entry = authors.get(author.login) ?? { ...author, count: 0 };
+      entry.count += 1;
+      authors.set(author.login, entry);
+    }
+  }
+  return { count: unresolved.length, authors: [...authors.values()].sort((a, b) => b.count - a.count) };
+}
+
 async function fetchStack(token, owner, repo, number) {
   const data = await graphql(token, COMMENTS_QUERY, { owner, repo, number });
   const comment = data.repository?.pullRequest?.comments.nodes.find(({ body }) => STACK_COMMENT.test(body));
@@ -83,13 +119,18 @@ async function fetchStack(token, owner, repo, number) {
     return null;
   }
 
-  const fields = numbers.map((n) => `pr${n}: pullRequest(number: ${n}) { number title state isDraft }`).join('\n');
+  const fields = numbers
+    .map((n) => `pr${n}: pullRequest(number: ${n}) { number title state isDraft ${THREAD_FIELDS} }`)
+    .join('\n');
   const prData = await graphql(
     token,
     `query ($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { ${fields} } }`,
     { owner, repo },
   );
-  const prs = numbers.map((n) => prData.repository[`pr${n}`]).filter(Boolean);
+  const prs = numbers
+    .map((n) => prData.repository[`pr${n}`])
+    .filter(Boolean)
+    .map(({ reviewThreads, ...pr }) => ({ ...pr, threads: summarizeThreads({ reviewThreads }) }));
   return { owner, repo, prs, base };
 }
 
@@ -117,6 +158,51 @@ async function getStack({ owner, repo, number }) {
   }
 }
 
+async function fetchThreads(token, owner, repo, numbers) {
+  const fields = numbers.map((n) => `pr${n}: pullRequest(number: ${n}) { ${THREAD_FIELDS} }`).join('\n');
+  const data = await graphql(
+    token,
+    `query ($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { ${fields} } }`,
+    { owner, repo },
+  );
+  return Object.fromEntries(
+    numbers.filter((n) => data.repository[`pr${n}`]).map((n) => [n, summarizeThreads(data.repository[`pr${n}`])]),
+  );
+}
+
+async function getThreads({ owner, repo, numbers }) {
+  const { [TOKEN_KEY]: token } = await chrome.storage.local.get(TOKEN_KEY);
+  if (!token) {
+    return { threads: {} };
+  }
+
+  const threads = {};
+  const missing = [];
+  for (const number of numbers) {
+    const cached = threadsCache.get(`${owner}/${repo}#${number}`);
+    if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+      threads[number] = cached.threads;
+    } else {
+      missing.push(number);
+    }
+  }
+  if (!missing.length) {
+    return { threads };
+  }
+
+  try {
+    const fetched = await fetchThreads(token, owner, repo, missing);
+    for (const [number, summary] of Object.entries(fetched)) {
+      threadsCache.set(`${owner}/${repo}#${number}`, { threads: summary, at: Date.now() });
+      threads[number] = summary;
+    }
+    return { threads };
+  } catch (error) {
+    console.error(`[fix-github-dumb-ui] Thread request for ${owner}/${repo} failed:`, error);
+    return { threads, error: error.message };
+  }
+}
+
 async function validateToken(token) {
   try {
     const data = await graphql(token, 'query { viewer { login } }');
@@ -129,6 +215,7 @@ async function validateToken(token) {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && TOKEN_KEY in changes) {
     stackCache.clear();
+    threadsCache.clear();
   }
 });
 
@@ -136,6 +223,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case 'getStack':
       getStack(message).then(sendResponse);
+      return true;
+    case 'getThreads':
+      getThreads(message).then(sendResponse);
       return true;
     case 'validateToken':
       validateToken(message.token).then(sendResponse);

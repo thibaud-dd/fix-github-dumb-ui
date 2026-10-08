@@ -16,7 +16,7 @@
     {
       "matches": ["https://github.com/*"],
       "css": ["styles.css"],
-      "js": ["stack.js", "content.js"],
+      "js": ["threads.js", "stack.js", "pr-list.js", "content.js"],
       "run_at": "document_start"
     }
   ]

@@ -122,7 +122,7 @@ function renderStackList() {
 
 function renderStackError() {
   const container = stackElement('div', 'fgu-stack-error');
-  const button = stackElement('button', 'fgu-stack-options', 'Open options');
+  const button = stackElement('button', 'fgu-stack-options', 'Update token');
   button.type = 'button';
   button.addEventListener('click', () => chrome.runtime.sendMessage({ type: 'openOptions' }));
   container.append(stackElement('p', '', stackState.error), button);

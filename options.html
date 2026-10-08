@@ -11,6 +11,7 @@
       body {
         margin: 16px;
         min-width: 420px;
+        max-width: 560px;
       }
       label,
       .label {
@@ -60,7 +61,7 @@
       <label for="token">GitHub token</label>
       <input id="token" type="password" autocomplete="off" spellcheck="false" />
       <p class="hint">
-        The stack sidebar reads the Graphite stack comment with this token. To use your gh CLI token, run
+        The stack sidebar and the open review comments read GitHub data with this token. To use your gh CLI token, run
         <code>gh auth token --user &lt;login&gt;</code>.
       </p>
       <p id="edit-error" class="error" role="alert" hidden></p>

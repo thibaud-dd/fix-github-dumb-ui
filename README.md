@@ -22,7 +22,7 @@ After you edit a file, click the reload icon on the extension card. Then reload 
 The stack sidebar and the open review comments read data through the GitHub API, so they need a token.
 
 1. Get a token. To use your gh CLI token, run `gh auth token --user <login>`.
-2. On the extension card in `chrome://extensions`, click **Details**, then **Extension options**.
+2. Click the extension button in the Chrome toolbar, then **Set GitHub token**. If the button is not visible, open the menu from the puzzle icon. The token page opens in a new tab.
 3. Paste the token and click **Save**. The page shows the login that the token belongs to.
 
-The token is stored in the extension's local storage. If GitHub rejects the token, the sidebar shows an error with a link to the options.
+The token is stored in the extension's local storage. You can also set the token from **Extension options** on the extension card in `chrome://extensions`. If GitHub rejects the token, the sidebar shows an error with a button that opens the token page.

@@ -244,6 +244,17 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// The manifest has no action key, so a click on the toolbar button opens Chrome's extension menu.
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({ id: 'setToken', title: 'Set GitHub token', contexts: ['action'] });
+});
+
+chrome.contextMenus.onClicked.addListener(({ menuItemId }) => {
+  if (menuItemId === 'setToken') {
+    chrome.runtime.openOptionsPage();
+  }
+});
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case 'getStack':

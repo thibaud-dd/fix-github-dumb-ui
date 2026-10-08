@@ -3,14 +3,14 @@
   "name": "Fix GitHub Dumb UI",
   "version": "1.1.0",
   "description": "Full-width PR pages, a resizable file tree, full file paths in diff headers, and a Graphite stack sidebar.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "contextMenus"],
   "host_permissions": ["https://api.github.com/*"],
   "background": {
     "service_worker": "background.js"
   },
   "options_ui": {
     "page": "options.html",
-    "open_in_tab": false
+    "open_in_tab": true
   },
   "content_scripts": [
     {

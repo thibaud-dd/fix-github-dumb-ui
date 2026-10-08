@@ -4,7 +4,7 @@ function renderThreadsBadge({ count, authors }) {
   const badge = document.createElement('span');
   badge.className = 'fgu-threads';
   const who = authors.map(({ login, count: n }) => `${login} (${n})`).join(', ');
-  badge.title = `${count} unresolved ${count === 1 ? 'thread' : 'threads'}${who ? `: ${who}` : ''}`;
+  badge.title = `${count} open review ${count === 1 ? 'comment' : 'comments'}${who ? `: ${who}` : ''}`;
   badge.setAttribute('aria-label', badge.title);
 
   const avatars = document.createElement('span');

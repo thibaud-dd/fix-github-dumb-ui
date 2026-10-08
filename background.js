@@ -19,21 +19,38 @@ const COMMENTS_QUERY = `
   }
 `;
 
+const AUTHOR_FIELDS = `
+  __typename
+  login
+  avatarUrl(size: 40)
+  ... on User {
+    name
+  }
+`;
+
 // Only review threads can be resolved. The API has no isResolved filter, so count on the client.
+// Review summaries have no resolved state, so every summary by a person other than the PR author counts.
 const THREAD_FIELDS = `
+  author {
+    login
+  }
   reviewThreads(first: 100) {
     nodes {
       isResolved
       comments(first: 1) {
         nodes {
           author {
-            login
-            avatarUrl(size: 40)
-            ... on User {
-              name
-            }
+            ${AUTHOR_FIELDS}
           }
         }
+      }
+    }
+  }
+  reviews(first: 100) {
+    nodes {
+      body
+      author {
+        ${AUTHOR_FIELDS}
       }
     }
   }
@@ -92,19 +109,24 @@ function parseStackComment(body) {
   return { numbers, base };
 }
 
-// Authors are the thread starters, most threads first.
+// Authors are the thread starters and the summary authors, most comments first.
 function summarizeThreads(pr) {
-  const unresolved = pr.reviewThreads.nodes.filter(({ isResolved }) => !isResolved);
+  const threadAuthors = pr.reviewThreads.nodes
+    .filter(({ isResolved }) => !isResolved)
+    .map((thread) => thread.comments.nodes[0]?.author ?? null);
+  const summaryAuthors = pr.reviews.nodes
+    .filter(({ body, author }) => body.trim() && author?.__typename === 'User' && author.login !== pr.author?.login)
+    .map(({ author }) => author);
+  const all = [...threadAuthors, ...summaryAuthors];
+
   const authors = new Map();
-  for (const thread of unresolved) {
-    const author = thread.comments.nodes[0]?.author;
-    if (author) {
-      const entry = authors.get(author.login) ?? { ...author, count: 0 };
-      entry.count += 1;
-      authors.set(author.login, entry);
-    }
+  for (const author of all.filter(Boolean)) {
+    const { __typename, ...fields } = author;
+    const entry = authors.get(author.login) ?? { ...fields, count: 0 };
+    entry.count += 1;
+    authors.set(author.login, entry);
   }
-  return { count: unresolved.length, authors: [...authors.values()].sort((a, b) => b.count - a.count) };
+  return { count: all.length, authors: [...authors.values()].sort((a, b) => b.count - a.count) };
 }
 
 async function fetchStack(token, owner, repo, number) {
@@ -130,7 +152,10 @@ async function fetchStack(token, owner, repo, number) {
   const prs = numbers
     .map((n) => prData.repository[`pr${n}`])
     .filter(Boolean)
-    .map(({ reviewThreads, ...pr }) => ({ ...pr, threads: summarizeThreads({ reviewThreads }) }));
+    .map(({ author, reviewThreads, reviews, ...pr }) => ({
+      ...pr,
+      threads: summarizeThreads({ author, reviewThreads, reviews }),
+    }));
   return { owner, repo, prs, base };
 }
 

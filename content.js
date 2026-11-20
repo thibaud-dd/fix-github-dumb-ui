@@ -3,6 +3,7 @@ const MIN_SIDEBAR_WIDTH = 160;
 const MIN_MAIN_WIDTH = 400;
 const PR_PATH = /^\/[^/]+\/[^/]+\/pull\/\d+/;
 const ELLIPSIS = /^(\.\.\.|…)/;
+const RENAME_ARROW = ' → ';
 
 const root = document.documentElement;
 
@@ -10,11 +11,22 @@ function syncPrFlag() {
   root.toggleAttribute('data-fgu-pr', PR_PATH.test(location.pathname));
 }
 
-// GitHub cuts long paths to ~93 chars on the server and keeps the full path in `title`.
+// A shown path is the full path, or an ellipsis and the end of the full path.
+function matchesPath(text, path) {
+  return text === path || (ELLIPSIS.test(text) && path.endsWith(text.replace(ELLIPSIS, '')));
+}
+
+// GitHub cuts long paths to ~93 chars on the server and keeps the full path in `title`. Renames show
+// both paths as "old → new", and each side is cut on its own.
 function expandTruncatedPaths() {
   document.querySelectorAll('.file-header .file-info a[title]:not(.fgu-path)').forEach((link) => {
-    const text = link.textContent.trim();
-    if (!ELLIPSIS.test(text) || !link.title.endsWith(text.replace(ELLIPSIS, ''))) {
+    const parts = link.textContent.trim().split(RENAME_ARROW);
+    const paths = link.title.split(RENAME_ARROW);
+    if (
+      parts.length !== paths.length ||
+      !parts.some((part) => ELLIPSIS.test(part)) ||
+      !parts.every((part, index) => matchesPath(part, paths[index]))
+    ) {
       return;
     }
     // <bdi> keeps the path in LTR order inside the RTL link that moves the ellipsis to the start.

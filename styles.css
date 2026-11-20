@@ -227,7 +227,7 @@ html[data-fgu-stack] .application-main {
 .fgu-stack-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .fgu-stack-title {
@@ -241,9 +241,15 @@ html[data-fgu-stack] .application-main {
   font-weight: 600;
 }
 
-.fgu-stack-number {
+.fgu-stack-number,
+.fgu-stack-review {
   color: var(--fgColor-muted, #59636e);
   font-size: 12px;
+}
+
+.fgu-stack-review::before {
+  content: '·';
+  margin-right: 4px;
 }
 
 .fgu-stack-base {

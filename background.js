@@ -4,15 +4,47 @@ const CACHE_TTL_MS = 30_000;
 const STACK_COMMENT = /This stack of pull requests is managed by[\s\S]*graphite\.dev/;
 const STACK_PR_LINE = /^\* \*\*#(\d+)\*\*/;
 const STACK_BASE_LINE = /^\* `([^`]+)`/;
+const MAX_STACK_DEPTH = 20;
 
 const COMMENTS_QUERY = `
   query ($owner: String!, $repo: String!, $number: Int!) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $number) {
+        headRefName
+        baseRefName
+        isCrossRepository
         comments(first: 100) {
           nodes {
             body
           }
+        }
+      }
+    }
+  }
+`;
+
+const PARENT_QUERY = `
+  query ($owner: String!, $repo: String!, $branch: String!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequests(headRefName: $branch, states: OPEN, first: 5) {
+        nodes {
+          number
+          baseRefName
+          isCrossRepository
+        }
+      }
+    }
+  }
+`;
+
+const CHILD_QUERY = `
+  query ($owner: String!, $repo: String!, $branch: String!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequests(baseRefName: $branch, states: OPEN, first: 5, orderBy: { field: UPDATED_AT, direction: DESC }) {
+        nodes {
+          number
+          headRefName
+          isCrossRepository
         }
       }
     }
@@ -129,20 +161,63 @@ function summarizeThreads(pr) {
   return { count: all.length, authors: [...authors.values()].sort((a, b) => b.count - a.count) };
 }
 
+async function findBranchPr(token, owner, repo, query, branch) {
+  const data = await graphql(token, query, { owner, repo, branch });
+  return data.repository?.pullRequests.nodes.find(({ isCrossRepository }) => !isCrossRepository) ?? null;
+}
+
+// Without a Graphite comment, a PR is stacked on the open PR whose head branch is its base branch.
+// When a branch has several child PRs, the most recently updated one continues the stack.
+async function findBranchStack(token, owner, repo, pr) {
+  if (pr.isCrossRepository) {
+    return { numbers: [], base: null };
+  }
+  const seen = new Set([pr.number]);
+
+  const below = [];
+  let base = pr.baseRefName;
+  while (below.length < MAX_STACK_DEPTH) {
+    const parent = await findBranchPr(token, owner, repo, PARENT_QUERY, base);
+    if (!parent || seen.has(parent.number)) {
+      break;
+    }
+    seen.add(parent.number);
+    below.push(parent.number);
+    base = parent.baseRefName;
+  }
+
+  const above = [];
+  let head = pr.headRefName;
+  while (above.length < MAX_STACK_DEPTH) {
+    const child = await findBranchPr(token, owner, repo, CHILD_QUERY, head);
+    if (!child || seen.has(child.number)) {
+      break;
+    }
+    seen.add(child.number);
+    above.unshift(child.number);
+    head = child.headRefName;
+  }
+
+  return { numbers: [...above, pr.number, ...below], base };
+}
+
 async function fetchStack(token, owner, repo, number) {
   const data = await graphql(token, COMMENTS_QUERY, { owner, repo, number });
-  const comment = data.repository?.pullRequest?.comments.nodes.find(({ body }) => STACK_COMMENT.test(body));
-  if (!comment) {
+  const pr = data.repository?.pullRequest;
+  if (!pr) {
     return null;
   }
 
-  const { numbers, base } = parseStackComment(comment.body);
+  const comment = pr.comments.nodes.find(({ body }) => STACK_COMMENT.test(body));
+  const { numbers, base } = comment
+    ? parseStackComment(comment.body)
+    : await findBranchStack(token, owner, repo, { number, ...pr });
   if (numbers.length < 2) {
     return null;
   }
 
   const fields = numbers
-    .map((n) => `pr${n}: pullRequest(number: ${n}) { number title state isDraft ${THREAD_FIELDS} }`)
+    .map((n) => `pr${n}: pullRequest(number: ${n}) { number title state isDraft reviewDecision ${THREAD_FIELDS} }`)
     .join('\n');
   const prData = await graphql(
     token,

@@ -98,6 +98,9 @@ function renderStackList() {
 
     const meta = stackElement('span', 'fgu-stack-meta');
     meta.append(stackElement('span', 'fgu-stack-number', `#${pr.number}`));
+    if (pr.reviewDecision === 'APPROVED') {
+      meta.append(stackElement('span', 'fgu-stack-review', 'Approved'));
+    }
     if (pr.threads?.count) {
       meta.append(renderThreadsBadge(pr.threads));
     }
